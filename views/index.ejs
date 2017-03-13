@@ -8,6 +8,32 @@
     <title>Document</title>
 </head>
 <body>
-Hello World!
+<input type="file" id='input' onchange='handleFiles(this.files)'>
+<script>
+  function handleFiles(files){
+    var file = files[0]
+    sendFile(file,'/upload',function(err,responseText){
+        console.log(err,responseText)
+    })
+  }
+  function sendFile(file,url,callback) {
+
+              var xhr = new XMLHttpRequest();
+              var fd = new FormData();
+              
+              xhr.open("POST", url, true);
+              xhr.onreadystatechange = function() {
+                  if (xhr.readyState == 4) {
+                    if(xhr.status == 200)
+                      callback&&callback(null,xhr.responseText)
+                    else 
+                      callback&&callback(new Error(xhr.status))
+                  }
+              };
+              fd.append('myFile', file);
+              // Initiate a multipart/form-data upload
+              xhr.send(fd);
+          }
+</script>
 </body>
 </html>
