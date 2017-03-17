@@ -8,10 +8,40 @@ var parse = require('co-busboy');
 var saveTo = require('save-to');
 const router = require('koa-router')();
 const render = require('../lib/render')
-
+const passport = require('koa-passport')
 router.get('/', function *(next) {
+    let s = this.session
+    if(!s.cnt)s.cnt = 1
+    else
+        s.cnt +=1
+    console.log(s)
     this.body = yield render('index')
 });
+router.get('/login',function*(next){
+
+        if(this.isAuthenticated()){
+            this.redirect('/')
+        }else{
+            this.body = yield render('login')
+        }
+
+})
+router.post('/login',function *(next){
+    let ctx = this
+    yield passport.authenticate('local', function(err, user, info, status) {
+        if (user === false) {
+            ctx.body = { success: false }
+            ctx.throw(401)
+        } else {
+            ctx.login(user)
+            return ctx.redirect('back')
+        }
+    })(ctx, next)
+})
+router.get('/logout',function *(next){
+    this.logout()
+    this.redirect('/login')
+})
 router.post('/upload', function *(next) {
       // parse the multipart body
   var parts = parse(this, {
