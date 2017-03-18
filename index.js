@@ -3,6 +3,7 @@ const Koa = require('koa');
 const serve = require('koa-static');
 const convert = require('koa-convert')
 const app = new Koa()
+require('koa-validate')(app)
 const session = require('koa-generic-session')
 const redisStore = require('koa-redis')
 app.keys = ['awayismatch'];

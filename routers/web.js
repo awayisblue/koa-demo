@@ -1,14 +1,16 @@
 /**
  * Created by awayisblue on 2017/3/12.
  */
- var os = require('os');
-var path = require('path');
-var fs = require('co-fs');
-var parse = require('co-busboy');
-var saveTo = require('save-to');
+ const os = require('os');
+const path = require('path');
+const fs = require('co-fs');
+const parse = require('co-busboy');
+const saveTo = require('save-to');
 const router = require('koa-router')();
 const render = require('../lib/render')
 const passport = require('koa-passport')
+const User = require ('../models/User')
+const bcrypt = require('bcryptjs');
 router.get('/', function *(next) {
     let s = this.session
     if(!s.cnt)s.cnt = 1
@@ -20,8 +22,10 @@ router.get('/', function *(next) {
 router.get('/login',function*(next){
 
         if(this.isAuthenticated()){
+            console.log('isAuthenticated')
             this.redirect('/')
         }else{
+            console.log(' !isAuthenticated')
             this.body = yield render('login')
         }
 
@@ -34,6 +38,7 @@ router.post('/login',function *(next){
             ctx.throw(401)
         } else {
             ctx.login(user)
+            console.log('loginuser')
             return ctx.redirect('back')
         }
     })(ctx, next)
@@ -41,6 +46,26 @@ router.post('/login',function *(next){
 router.get('/logout',function *(next){
     this.logout()
     this.redirect('/login')
+})
+router.get('/register',function *(next){
+    this.body = yield render('register')
+})
+router.post('/register',function *(next){
+    // console.log(this.request.body)
+    this.checkBody('email').isEmail('email format not correct')
+    this.checkBody('password').notEmpty().len(3,20)
+    let body = this.request.body
+
+    var salt = bcrypt.genSaltSync(10);
+    var hash = bcrypt.hashSync(body.password, salt);
+    User.sync({force:true}).then(function () {
+        // Table created
+        return User.create({
+            email: body.email,
+            password: hash
+        });
+    });
+    this.body = 'ok'
 })
 router.post('/upload', function *(next) {
       // parse the multipart body

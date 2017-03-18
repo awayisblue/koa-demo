@@ -2,22 +2,26 @@
  * Created by awayisblue on 2017/3/17.
  */
 const passport = require('koa-passport')
-
-const fetchUser = (() => {
+const User = require ('./models/User')
+const bcrypt = require('bcryptjs')
+const fetchUser = (email) => {
     // This is an example! Use password hashing in your
-    const user = { id: 1, username: 'test', password: 'test' }
-    return async function() {
-        return user
-    }
-})()
+    // const user = { id: 1, username: 'test', password: 'test' }
+    return User.findOne({
+        where:{
+            email:email
+        },
+        raw:true
+    })
+}
 
 passport.serializeUser(function(user, done) {
-    done(null, user.id)
+    done(null, user.email)
 })
 
-passport.deserializeUser(async function(id, done) {
+passport.deserializeUser(async function(email, done) {
     try {
-        const user = await fetchUser()
+        const user =  fetchUser()
         done(null, user)
     } catch(err) {
         done(err)
@@ -25,12 +29,14 @@ passport.deserializeUser(async function(id, done) {
 })
 
 const LocalStrategy = require('passport-local').Strategy
-passport.use(new LocalStrategy(function(username, password, done) {
-    fetchUser()
+passport.use(new LocalStrategy({usernameField:'email',passwordField:'password'},function(email, password, done) {
+    fetchUser(email)
         .then(user => {
-            if (username === user.username && password === user.password) {
+            if (email === user.email && bcrypt.compareSync(password, user.password)) {
+                console.log('done auth')
                 done(null, user)
             } else {
+                console.log('fail auth')
                 done(null, false)
             }
         })
