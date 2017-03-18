@@ -1,7 +1,7 @@
 /**
  * Created by awayisblue on 2017/3/12.
  */
- const os = require('os');
+const os = require('os');
 const path = require('path');
 const fs = require('co-fs');
 const parse = require('co-busboy');
@@ -33,12 +33,12 @@ router.get('/login',function*(next){
 router.post('/login',function *(next){
     let ctx = this
     yield passport.authenticate('local', function(err, user, info, status) {
-        if (user === false) {
+        if (!user) {
             ctx.body = { success: false }
             ctx.throw(401)
         } else {
             ctx.login(user)
-            console.log('loginuser')
+            console.log('loginuser',user)
             return ctx.redirect('back')
         }
     })(ctx, next)
@@ -47,9 +47,11 @@ router.get('/logout',function *(next){
     this.logout()
     this.redirect('/login')
 })
+
 router.get('/register',function *(next){
     this.body = yield render('register')
 })
+
 router.post('/register',function *(next){
     // console.log(this.request.body)
     this.checkBody('email').isEmail('email format not correct')
@@ -58,14 +60,20 @@ router.post('/register',function *(next){
 
     var salt = bcrypt.genSaltSync(10);
     var hash = bcrypt.hashSync(body.password, salt);
-    User.sync({force:true}).then(function () {
+    let ctx = this
+    yield User.sync().then(function () {
         // Table created
         return User.create({
             email: body.email,
             password: hash
         });
+    }).then(function(){
+        ctx.body = 'ok'
+    }).catch(()=>{
+        ctx.body = '用户已存在'
+        // ctx.throw(401)
     });
-    this.body = 'ok'
+
 })
 router.post('/upload', function *(next) {
       // parse the multipart body
