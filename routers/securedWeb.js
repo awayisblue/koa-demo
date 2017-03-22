@@ -14,7 +14,7 @@ router.use(function*(next) {
             this.body = yield render('/login')
         }
     })
-router.get('/secured', function *(next) {
+router.get('/', function *(next) {
     this.body = 'body'
 });
 

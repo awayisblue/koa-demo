@@ -1,16 +1,13 @@
 /**
  * Created by awayisblue on 2017/3/12.
  */
-const os = require('os');
-const path = require('path');
-const fs = require('co-fs');
-const parse = require('co-busboy');
-const saveTo = require('save-to');
+
 const router = require('koa-router')();
 const render = require('../lib/render')
 const passport = require('koa-passport')
 const User = require ('../models/User')
 const bcrypt = require('bcryptjs');
+const sendEmail = require('../lib/sendEmail')
 router.get('/', function *(next) {
     let s = this.session
     if(!s.cnt)s.cnt = 1
@@ -48,8 +45,20 @@ router.get('/logout',function *(next){
     this.redirect('/login')
 })
 
+
 router.get('/register',function *(next){
     this.body = yield render('register')
+})
+router.get('/send',function *(next){
+    let mailOptions = {
+        to: 'example@qq.com', // list of receivers
+        subject: 'send mail example', // Subject line
+        text: 'Hi, I am text body', // plain text body
+        html: '<a href="http://www.baidu.com">Hi, I am html body</a>' // html body
+    };
+    let result = yield sendEmail(mailOptions)
+
+    this.body = result
 })
 
 router.post('/register',function *(next){
@@ -75,36 +84,5 @@ router.post('/register',function *(next){
     });
 
 })
-router.post('/upload', function *(next) {
-      // parse the multipart body
-  var parts = parse(this, {
-    autoFields: true // saves the fields to parts.field(s)
-  });
 
-  // create a temporary folder to store files
-  var tmpdir = path.join(os.tmpdir(), uid());
-
-  // make the temporary directory
-  yield fs.mkdir(tmpdir);
-
-  // list of all the files
-  var files = [];
-  var file;
-
-  // yield each part as a stream
-  var part;
-  while ((part = yield parts)) {
-    // filename for this part
-    files.push(file = path.join(tmpdir, part.filename));
-    // save the file
-    yield saveTo(part, file);
-  }
-
-  // return all the filenames as an array
-  // after all the files have finished downloading
-  this.body = files;
-});
-function uid() {
-  return Math.random().toString(36).slice(2);
-}
 module.exports = router

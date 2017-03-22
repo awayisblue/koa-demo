@@ -1,8 +1,11 @@
 //exec `cp config-example.js config.js` and change your config
 module.exports = {
     email:{
-        username:'your email address',
-        password:'your email password'
+        service: '126',
+        auth: {
+            user: 'youruser',
+            pass: 'yourpass'
+        }
     },
     mysql:{
         username:'root',
