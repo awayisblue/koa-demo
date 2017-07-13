@@ -1,40 +1,19 @@
-
 const Koa = require('koa');
-const serve = require('koa-static');
-const convert = require('koa-convert')
+const serve = require('koa-static')
 const mount = require('koa-mount')
+const json = require('koa-json')
+const bodyParser = require('koa-bodyparser')
 const app = new Koa()
 
-require('koa-validate')(app)
-require('koa-qs')(app,'first')
-const session = require('koa-generic-session')
-const redisStore = require('koa-redis')
-app.keys = ['awayismatch'];
+const staticMountPoint = new Koa()
 
-app.use(convert(session({
-    store: redisStore()
-})));
+require('koa-qs')(app, 'first') //parse query string in ctx.query
+app.use(json())  //response pretty json formate by assign object to ctx.body
+app.use(bodyParser()) //parse http body to ctx.request.body
 
-// body parser
-const bodyParser = require('koa-bodyparser')
-app.use(bodyParser())
-
-// authentication
-require('./auth')
-const passport = require('koa-passport')
-app.use(passport.initialize())
-app.use(passport.session())
-
-//mount point
-const webRouter = require('./routers/web')
-const sWebRouter = require('./routers/securedWeb')
-let openMountPoint = new Koa()
-let securedMountPoint = new Koa()
-let staticMountPoint = new Koa()
-securedMountPoint.use(convert(sWebRouter.routes())).use(convert(sWebRouter.allowedMethods()))
-openMountPoint.use(convert(webRouter.routes())).use(convert(webRouter.allowedMethods()))
-staticMountPoint.use(serve(__dirname + '/static'));
-app.use(mount(openMountPoint))
-app.use(mount('/secured',securedMountPoint))
+//static files
+staticMountPoint.use(serve('./static',{maxage:60 * 60 * 24 * 365}))
 app.use(mount('/static',staticMountPoint))
-app.listen(3000);
+require('./router')(app)
+app.listen(8080);
+console.log('http://localhost:8080')
