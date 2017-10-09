@@ -1,8 +1,7 @@
 const router = require('koa-router')();
-const controller = require('./controller')
+const controller = require('../controllers/web')
 function registerRoutes(router){
     router.get('/',controller.index)
-    router.get('/json',controller.json)
 }
 
 
